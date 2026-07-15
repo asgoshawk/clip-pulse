@@ -18,6 +18,12 @@ describe('editorReducer', () => {
     expect(state.present.selection).toEqual({ inUs: 1_966_667, outUs: 2_000_000 });
   });
 
+  it('moves Out forward when In crosses it', () => {
+    let state = editorReducer(createInitialState(), { type: 'media/ready', durationUs: 5_000_000, frameDurationUs: 33_333 });
+    state = editorReducer(state, { type: 'selection/set-in', inUs: 1_500_000 });
+    expect(state.present.selection).toEqual({ inUs: 1_500_000, outUs: 2_500_000 });
+  });
+
   it('does not create duplicate beat timestamps', () => {
     let state = createInitialState();
     state = editorReducer(state, { type: 'beat/add', timeUs: 100_000 });

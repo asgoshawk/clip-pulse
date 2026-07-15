@@ -8,12 +8,21 @@
 - Rationale: RxJS pipeable operators compose without mutating the input Observable and subscriptions define teardown; Zustand selector subscriptions can prevent unrelated editor panels from re-rendering. Both support the performance constraints when kept outside the deterministic domain core.
 - Rejected: migrating all React state and events immediately. It increases bundle and conceptual cost before the workflows requiring those abstractions exist.
 
-## Guided workflow and transport state (2026-07-15)
+## Guided workflow and transport state (2026-07-16)
 
-- Decision: model production as `import -> select -> rhythm -> preview` and playback as the mutually exclusive `stopped | source | range | rhythm` state machine.
-- Decision: action range, source playhead, beat positions, and output duration remain separate domain values. Output duration trims or repeats the immutable render plan and never mutates the selected source range.
+- Decision: model production as `import -> select -> compose` and playback as the mutually exclusive `stopped | range | composition` state machine. Rhythm controls, output preview, and export share one Compose workspace instead of separate steps.
+- Decision: a beat is an output-timeline clip-instance start. Every instance restarts the immutable source range selected in step one. The editor creates an initial instance at output zero, never invents unmarked repetitions, and holds the last rendered frame across uncovered output time.
+- Decision: source range, source playhead, output playhead, clip-instance positions, and output duration remain separate domain values. Changing In beyond Out moves Out forward while preserving the prior source-range length where media bounds permit.
 - Decision: accept both seconds and `minutes:seconds` as draft text, validating only on Enter or blur. Range preview loops between In and Out before the user advances.
-- Rationale: this prevents native video events, range looping, and requestAnimationFrame rhythm preview from independently toggling the same boolean, while keeping transitions deterministic and testable.
+- Rationale: the two-step model matches the user's mental model—choose one action, then place copies in the finished video—while preventing native video events, range looping, and composition preview from independently toggling the same boolean.
+
+## Interaction references (2026-07-16)
+
+- [Canva Beat Sync](https://www.canva.com/help/beat-sync/): use an output/audio timeline and snap clips to visible beat markers. Applied here by making every marker an explicit clip instance instead of an abstract source-video annotation.
+- [CapCut Auto Cut](https://www.capcut.com/tools/auto-video-editor): expose rhythm-derived automation as editable output structure. The MVP keeps BPM and reference-audio generation, but all generated instances remain movable and removable.
+- [Adobe Premiere Pro clip markers](https://helpx.adobe.com/premiere-pro/using/markers.html): distinguish source clip markers from sequence positions. Applied here by separating the source playhead from the output playhead.
+- [OpenVideo](https://github.com/OpenCut-app/OpenCut): reference for a React, browser-local editing surface backed by WebCodecs.
+- [elah](https://github.com/davidlyons/elah): reference for browser-native WebCodecs/WebGL rendering, integer-frame timeline modelling, and separation between preview, timeline, and rendering concerns.
 
 ## Browser media stack
 

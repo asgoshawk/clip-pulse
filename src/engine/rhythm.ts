@@ -16,14 +16,14 @@ async function analyzeOnsets(samples: Float32Array, sampleRate: number): Promise
 }
 
 export function analyzeRhythm$(file: File, dependencies: AnalysisDependencies = {}): Observable<RhythmAnalysisEvent> {
-  return new Observable(subscriber => { const controller = new AbortController(); void (async () => { try { subscriber.next({ type: 'progress', phase: 'decoding', progress: 0.1 }); const decoded = await (dependencies.decode ? dependencies.decode(controller.signal) : decodeAudio(file, controller.signal)); if (controller.signal.aborted) return; subscriber.next({ type: 'progress', phase: 'analyzing', progress: 0.65 }); const times = await (dependencies.analyze ?? analyzeOnsets)(decoded.samples, decoded.sampleRate); if (controller.signal.aborted) return; subscriber.next({ type: 'result', durationUs: decoded.durationUs, beats: times.slice(0, 10_000).filter(timeUs => timeUs <= decoded.durationUs).map((timeUs, index) => ({ id: `audio-${index + 1}`, timeUs: Math.round(timeUs), accent: index % 4 === 0 ? 2 : 1 })) }); subscriber.complete(); } catch (error) { if (!controller.signal.aborted) subscriber.error(error); } })(); return () => controller.abort(); });
+  return new Observable(subscriber => { const controller = new AbortController(); void (async () => { try { subscriber.next({ type: 'progress', phase: 'decoding', progress: 0.1 }); const decoded = await (dependencies.decode ? dependencies.decode(controller.signal) : decodeAudio(file, controller.signal)); if (controller.signal.aborted) return; subscriber.next({ type: 'progress', phase: 'analyzing', progress: 0.65 }); const times = await (dependencies.analyze ?? analyzeOnsets)(decoded.samples, decoded.sampleRate); if (controller.signal.aborted) return; subscriber.next({ type: 'result', durationUs: decoded.durationUs, beats: times.slice(0, 10_000).filter(timeUs => timeUs < decoded.durationUs).map((timeUs, index) => ({ id: `audio-${index + 1}`, timeUs: Math.round(timeUs), accent: index % 4 === 0 ? 2 : 1 })) }); subscriber.complete(); } catch (error) { if (!controller.signal.aborted) subscriber.error(error); } })(); return () => controller.abort(); });
 }
 
 export function makeRegularBeats(durationUs: number, bpm: number): BeatEvent[] {
   if (!Number.isFinite(bpm) || bpm < 30 || bpm > 300) throw new RangeError('BPM 必須介於 30 到 300。');
   const interval = Math.round(60_000_000 / bpm);
   const beats: BeatEvent[] = [];
-  for (let timeUs = 0, index = 0; timeUs <= durationUs && index < 10_000; timeUs += interval, index++) {
+  for (let timeUs = 0, index = 0; timeUs < durationUs && index < 10_000; timeUs += interval, index++) {
     beats.push({ id: `beat-${index + 1}`, timeUs, accent: index % 4 === 0 ? 2 : 1 });
   }
   return beats;

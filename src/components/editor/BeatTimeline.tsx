@@ -19,8 +19,8 @@ export function BeatTimeline({ durationUs, currentUs, beats, selection, onSeek, 
     const playX = durationUs ? rect.width * currentUs / durationUs : 0; context.fillStyle = '#fafafa'; context.fillRect(playX - 1, 0, 2, 112);
   }, [beats, currentUs, durationUs, selection]);
   const seek = (clientX: number) => { const rect = canvasRef.current?.getBoundingClientRect(); if (rect) onSeek(Math.round(Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)) * durationUs)); };
-  return <section aria-label="影片與節奏時間軸" className="border-t border-zinc-800 bg-zinc-950 p-4">
-    <div className="mb-3 flex items-center justify-between"><div><h2 className="text-sm font-medium">影片與節奏時間軸</h2><p className="text-[11px] text-zinc-500">琥珀色區域是選取的動作範圍</p></div><div className="flex items-center gap-3"><span className="text-xs text-zinc-500">{beats.length} 個拍點</span>{beats.length > 0 && onClear && <button className="text-xs text-red-300 hover:text-red-200" onClick={onClear}>清除全部</button>}</div></div>
+  return <section aria-label={selection ? '來源片段時間軸' : '成品片段時間軸'} className="border-t border-zinc-800 bg-zinc-950 p-4">
+    <div className="mb-3 flex items-center justify-between"><div><h2 className="text-sm font-medium">{selection ? '來源片段時間軸' : '成品片段時間軸'}</h2><p className="text-[11px] text-zinc-500">{selection ? '琥珀色區域是選取的來源動作' : '每個拍點都會從頭播放一次來源片段'}</p></div><div className="flex items-center gap-3"><span className="text-xs text-zinc-500">{beats.length} 個片段實例</span>{beats.length > 0 && onClear && <button className="text-xs text-red-300 hover:text-red-200" onClick={onClear}>清除全部</button>}</div></div>
     <canvas ref={canvasRef} className="h-28 w-full rounded-lg" onPointerDown={(event) => seek(event.clientX)} />
     <div className="mt-3 flex min-h-8 gap-2 overflow-x-auto">
       {beats.map((beat) => <div key={beat.id} className="flex shrink-0 items-center gap-1 rounded-md bg-zinc-800 px-2 py-1 text-xs">

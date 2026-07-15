@@ -4,7 +4,7 @@ import { analyzeRhythm$, makeRegularBeats, readRhythmTemplate } from './rhythm';
 
 describe('rhythm workflow', () => {
   it('creates bounded regular beats and roundtrips a validated template', async () => {
-    expect(makeRegularBeats(1_000_000, 120).map(beat => beat.timeUs)).toEqual([0, 500_000, 1_000_000]);
+    expect(makeRegularBeats(1_000_000, 120).map(beat => beat.timeUs)).toEqual([0, 500_000]);
     const file = new File([JSON.stringify({ schemaVersion: 1, name: 'test', durationUs: 1_000_000, beats: [{ id: 'a', timeUs: 0, accent: 1 }] })], 'rhythm.json');
     expect((await readRhythmTemplate(file)).beats).toHaveLength(1);
   });

@@ -19,6 +19,8 @@ export interface EditorState {
 export type EditorAction =
   | { type: 'media/ready'; durationUs: number; frameDurationUs: number }
   | { type: 'selection/set'; inUs: number; outUs: number }
+  | { type: 'selection/set-in'; inUs: number }
+  | { type: 'selection/set-out'; outUs: number }
   | { type: 'beat/add'; timeUs: number; accent?: number }
   | { type: 'beat/remove'; id: string }
   | { type: 'beat/move'; id: string; timeUs: number }
@@ -86,17 +88,25 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     case 'selection/set':
       next.selection = clampSelection(next, action.inUs, action.outUs);
       break;
+    case 'selection/set-in': {
+      if (!next.selection) break; const span = next.selection.outUs - next.selection.inUs; const inUs = Math.min(next.durationUs - next.frameDurationUs, Math.max(0, Math.round(action.inUs))); const outUs = inUs >= next.selection.outUs ? Math.min(next.durationUs, inUs + span) : next.selection.outUs; next.selection = clampSelection(next, inUs, outUs);
+      break;
+    }
+    case 'selection/set-out': {
+      if (!next.selection) break; const span = next.selection.outUs - next.selection.inUs; const outUs = Math.min(next.durationUs, Math.max(next.frameDurationUs, Math.round(action.outUs))); const inUs = outUs <= next.selection.inUs ? Math.max(0, outUs - span) : next.selection.inUs; next.selection = clampSelection(next, inUs, outUs);
+      break;
+    }
     case 'beat/add':
-      next.beats = normalizeBeats([...next.beats, { id: crypto.randomUUID(), timeUs: Math.round(action.timeUs), accent: Math.min(3, Math.max(1, action.accent ?? 1)) }]);
+      next.beats = normalizeBeats([...next.beats, { id: crypto.randomUUID(), timeUs: Math.min(next.outputDurationUs - next.frameDurationUs, Math.round(action.timeUs)), accent: Math.min(3, Math.max(1, action.accent ?? 1)) }]);
       break;
     case 'beat/remove':
       next.beats = next.beats.filter((beat) => beat.id !== action.id);
       break;
     case 'beat/move':
-      next.beats = normalizeBeats(next.beats.map((beat) => beat.id === action.id ? { ...beat, timeUs: Math.round(action.timeUs) } : beat));
+      next.beats = normalizeBeats(next.beats.map((beat) => beat.id === action.id ? { ...beat, timeUs: Math.min(next.outputDurationUs - next.frameDurationUs, Math.max(0, Math.round(action.timeUs))) } : beat));
       break;
     case 'beats/replace':
-      next.beats = normalizeBeats(action.beats);
+      next.beats = normalizeBeats(action.beats.filter(beat => beat.timeUs < next.outputDurationUs));
       break;
     case 'mapping/set':
       next.mappingMode = action.mode;
