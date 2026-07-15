@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { parseRhythmTemplate } from './contracts';
 
@@ -29,5 +31,12 @@ describe('parseRhythmTemplate', () => {
 
   it('rejects unknown fields', () => {
     expect(() => parseRhythmTemplate({ schemaVersion: 1, name: 'x', durationUs: 1, beats: [], url: 'https://evil.invalid' })).toThrow();
+  });
+
+  it('validates the bundled cinematic fanfare example', () => {
+    const input = JSON.parse(readFileSync(join(process.cwd(), 'public/examples/cinematic-studio-fanfare.clip-pulse.json'), 'utf8')) as unknown;
+    const template = parseRhythmTemplate(input);
+    expect(template.durationUs).toBe(20_500_000);
+    expect(template.beats).toHaveLength(32);
   });
 });

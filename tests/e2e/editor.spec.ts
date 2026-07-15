@@ -41,3 +41,8 @@ test('analyzes uploaded reference audio locally and creates editable beats', asy
   await expect(page.getByRole('status').filter({ hasText: '找到' })).toContainText(/找到 [1-9][0-9]* 個拍點/); await expect(page.getByText(/[1-9][0-9]* 個片段實例/).first()).toBeVisible();
   await page.getByRole('button', { name: '清除全部' }).click(); await expect(page.getByText('0 個片段實例', { exact: true })).toBeVisible();
 });
+test('downloads and imports the bundled cinematic fanfare rhythm example', async ({ page }) => {
+  await page.goto('./'); const video = await createVideoFixture(page); await page.getByLabel('影片檔案').setInputFiles({ name: 'fixture.mp4', mimeType: 'video/mp4', buffer: video }); await page.getByRole('button', { name: '使用這段動作' }).click();
+  const downloadPromise = page.waitForEvent('download'); await page.getByRole('link', { name: '範例' }).click(); const download = await downloadPromise; expect(download.suggestedFilename()).toBe('cinematic-studio-fanfare.clip-pulse.json'); const path = await download.path(); expect(path).toBeTruthy();
+  await page.getByLabel('上傳節奏範本').setInputFiles(path!); await expect(page.getByLabel('成品總長度')).toHaveValue('20.500'); await expect(page.getByText('32 個片段實例', { exact: true })).toBeVisible();
+});

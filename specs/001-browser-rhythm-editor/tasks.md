@@ -52,6 +52,7 @@
 - [x] T029 [US1] Add shared preview volume/mute controls and native forward-segment playback scheduling in src/components/editor/VolumeControl.tsx and src/engine/playback.ts
 - [x] T030 [US1] Add dismissible composition onboarding in src/components/editor/ComposeOnboarding.tsx
 - [x] T031 [US1] Add unit, browser interaction, and visual regression coverage for audible preview, moving output playhead, and onboarding
+- [x] T032 [US1] Add and validate an original downloadable cinematic fanfare timing example with duration-aware template import
 
 ## Dependencies & Strategy
 
