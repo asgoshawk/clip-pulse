@@ -15,6 +15,8 @@
 - Decision: source range, source playhead, output playhead, clip-instance positions, and output duration remain separate domain values. Changing In beyond Out moves Out forward while preserving the prior source-range length where media bounds permit.
 - Decision: accept both seconds and `minutes:seconds` as draft text, validating only on Enter or blur. Range preview loops between In and Out before the user advances.
 - Rationale: the two-step model matches the user's mental model—choose one action, then place copies in the finished video—while preventing native video events, range looping, and composition preview from independently toggling the same boolean.
+- Decision: keep a dismissible three-action onboarding card inside Compose and place mute/volume beside the shared play control. For forward segments, seek only at segment boundaries or material drift and let native media playback advance frames and source audio between boundaries.
+- Rationale: forcing `currentTime` on every animation frame leaves the media element paused, starves decoding, and cannot emit audio. Boundary synchronization preserves deterministic output timing while using Chrome's optimized media pipeline.
 
 ## Interaction references (2026-07-16)
 

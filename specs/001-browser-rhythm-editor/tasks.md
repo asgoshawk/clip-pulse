@@ -49,6 +49,9 @@
 - [ ] T026 Configure SHA-pinned CI, dependency review, CodeQL, Dependabot, and Pages deployment in .github/
 - [x] T027 Validate formatting, Rust tests, Vitest, Storybook, Playwright, security checks, budgets, and production build
 - [x] T028 Run quickstart acceptance and record completed tasks in specs/001-browser-rhythm-editor/tasks.md
+- [x] T029 [US1] Add shared preview volume/mute controls and native forward-segment playback scheduling in src/components/editor/VolumeControl.tsx and src/engine/playback.ts
+- [x] T030 [US1] Add dismissible composition onboarding in src/components/editor/ComposeOnboarding.tsx
+- [x] T031 [US1] Add unit, browser interaction, and visual regression coverage for audible preview, moving output playhead, and onboarding
 
 ## Dependencies & Strategy
 

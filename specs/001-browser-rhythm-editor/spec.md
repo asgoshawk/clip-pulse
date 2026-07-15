@@ -24,6 +24,8 @@ A desktop Chrome user imports a local video, chooses a short In/Out range, creat
 2. **Given** loaded media, **When** the user sets valid In/Out points and taps beats, **Then** ordered editable beat markers appear on the timeline.
 3. **Given** a valid selection and beats, **When** the user previews restart mapping, **Then** playback restarts from In at every beat.
 4. **Given** an export-capable browser, **When** export completes, **Then** the user receives a local MP4 and all temporary resources are released.
+5. **Given** a first-time user enters composition, **When** the workspace opens, **Then** an inline guide explains output duration, clip-instance placement, and preview controls.
+6. **Given** source audio and a forward clip instance, **When** preview starts, **Then** the picture, output playhead, and audible source range advance together at the selected preview volume.
 
 ---
 
@@ -78,6 +80,8 @@ A user chooses restart, complete-and-hold, fit-to-beat, or alternating direction
 - **FR-007**: The product MUST import and export a versioned, media-free rhythm template with strict validation.
 - **FR-008**: The product MUST compile restart, complete-and-hold, fit-to-beat, and alternating-direction mappings with identical preview and export semantics.
 - **FR-009**: Users MUST independently control source, reference, and click audio and explicitly opt in before reference audio is exported.
+- **FR-009a**: The shared preview transport MUST expose immediate mute and volume controls; preview-only volume changes MUST NOT mutate source media or imply that exported MP4 audio is available.
+- **FR-009b**: Composition preview MUST use native forward media playback between deterministic segment boundaries so that visible frames, output playhead, and source audio remain perceptibly synchronized.
 - **FR-010**: The product MUST export local H.264/AAC MP4 when the browser advertises compatible encoders.
 - **FR-011**: The product MUST show actual WebGPU, WebCodecs, fallback, and blocked capability states without claiming unavailable acceleration.
 - **FR-012**: The product MUST provide clear empty, loading, progress, cancellation, degraded, error, recovery, and completed states.

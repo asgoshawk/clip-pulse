@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mapOutputToSourceUs } from './playback';
+import { mapOutputToSourceUs, resolvePlaybackFrame } from './playback';
 import type { RenderPlanV1 } from '@/lib/contracts';
 
 const plan: RenderPlanV1 = { schemaVersion: 1, durationUs: 1_000_000, segments: [
@@ -14,4 +14,10 @@ describe('mapOutputToSourceUs', () => {
     expect(mapOutputToSourceUs(plan, 1_050_000)).toBe(150_000); expect(plan).toEqual(frozen);
   });
   it('returns zero for an empty plan', () => expect(mapOutputToSourceUs({ schemaVersion: 1, durationUs: 0, segments: [] }, 10)).toBe(0));
+
+  it('describes when native media playback can carry preview audio', () => {
+    expect(resolvePlaybackFrame(plan, 50_000)).toMatchObject({ sourceUs: 150_000, rate: 1, shouldPlay: true, segmentIndex: 0 });
+    expect(resolvePlaybackFrame(plan, 400_000)).toMatchObject({ sourceUs: 300_000, shouldPlay: false, segmentIndex: 0 });
+    expect(resolvePlaybackFrame({ ...plan, segments: [{ ...plan.segments[0], direction: 'reverse' }] }, 50_000).shouldPlay).toBe(false);
+  });
 });
