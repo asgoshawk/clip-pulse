@@ -1,6 +1,6 @@
 # Clip Pulse
 
-一款完全在瀏覽器本機運作的節奏影片編輯器。使用者可匯入 MP4／MOV、選取動作片段、即時打拍或載入節奏範本，再由 WebCodecs 與 Mediabunny 匯出 H.264 MP4。影片不會離開裝置。
+一款完全在瀏覽器本機運作的節奏影片編輯器。使用者可匯入 MP4／MOV、選取動作片段、即時打拍、載入節奏範本或分析參考音訊，再由 Rust/WASM、WebCodecs 與 Mediabunny 匯出已套用節奏的 H.264 MP4。媒體不會離開裝置。
 
 [English](README.en.md) · [日本語](README.ja.md) · [使用指南](docs/zh-TW/guide.md)
 
@@ -19,4 +19,4 @@ corepack pnpm dev
 
 提交前請執行 `corepack pnpm verify:local`；較耗時的 Storybook、Playwright 與 Clippy 刻意留在本機，GitHub Actions 僅保留必要測試與 Pages 建置，以節省免費帳號用量。相依套件使用精確版本、鎖定檔、停用安裝腳本及 Dependabot 監控；提交訊息遵循英文 Conventional Commits。
 
-目前 MVP 以最新版桌面版 Chrome 為主要支援環境。音訊分析與混音仍列為後續增量；目前匯出的 MP4 為影片軌。
+目前 MVP 以最新版桌面版 Chrome 為主要支援環境。架構採 functional core／imperative shell；RxJS 管理可取消音訊分析，Zustand 只保存輕量 session 狀態。AAC 混音仍列為後續增量，目前匯出的 MP4 為無音訊影片軌。

@@ -1,5 +1,13 @@
 # Research: Browser Rhythm Editor
 
+## Functional core and reactive state (2026-07-15)
+
+- Decision: use a functional-core/imperative-shell architecture. Timeline validation, render-plan compilation, output-to-source mapping, and audio-plan transforms are total or bounded pure functions. DOM, WebCodecs, Web Audio, workers, and downloads remain explicit effect adapters.
+- Decision: adopt Zustand only for long-lived editor session and granular UI selectors after the mapped-preview slice is stable. Do not persist `File`, `Blob`, media elements, decoder instances, or object URLs.
+- Decision: adopt RxJS at the reference-audio/export pipeline boundary, where lazy multi-value progress, teardown, cancellation, backpressure, and worker events justify it. Do not use RxJS for ordinary local button state.
+- Rationale: RxJS pipeable operators compose without mutating the input Observable and subscriptions define teardown; Zustand selector subscriptions can prevent unrelated editor panels from re-rendering. Both support the performance constraints when kept outside the deterministic domain core.
+- Rejected: migrating all React state and events immediately. It increases bundle and conceptual cost before the workflows requiring those abstractions exist.
+
 ## Browser media stack
 
 **Decision**: Use Mediabunny for container inspection/muxing and WebCodecs for supported

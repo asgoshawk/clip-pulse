@@ -30,9 +30,9 @@
 
 ## Phase 4: User Story 2 - Analyze and refine audio rhythm
 
-- [ ] T016 [P] [US2] Write audio-analysis, cancellation, and rhythm-template roundtrip tests in src/engine/rhythm.test.ts
+- [x] T016 [P] [US2] Write audio-analysis, cancellation, and rhythm-template roundtrip tests in src/engine/rhythm.test.ts
 - [ ] T017 [US2] Implement chunked reference audio decoding, WASM analysis bridge, progress, cancellation, and template I/O in src/engine/rhythm.ts
-- [ ] T018 [US2] Implement reference audio and refinement UI in src/components/editor/RhythmPanel.tsx
+- [x] T018 [US2] Implement reference audio and refinement UI in src/components/editor/RhythmPanel.tsx
 
 ## Phase 5: User Story 3 - Mapping and audio controls
 
@@ -43,12 +43,12 @@
 ## Phase 6: Quality, security, and delivery
 
 - [x] T022 [P] Add deterministic Storybook stories and accessibility checks in .storybook/ and src/components/editor/*.stories.tsx
-- [ ] T023 [P] Add Playwright visual baselines and resource/performance checks in tests/visual/ and tests/e2e/performance.spec.ts
+- [x] T023 [P] Add Playwright visual baselines and resource/performance checks in tests/visual/ and tests/e2e/performance.spec.ts
 - [ ] T024 [P] Add Taiwan language-policy, documentation-parity, bundle-budget, audit, and license scripts in scripts/ and tests/
 - [x] T025 [P] Write complete zh-TW, English, and Japanese user documentation in README*.md and docs/
 - [ ] T026 Configure SHA-pinned CI, dependency review, CodeQL, Dependabot, and Pages deployment in .github/
-- [ ] T027 Validate formatting, Rust tests, Vitest, Storybook, Playwright, security checks, budgets, and production build
-- [ ] T028 Run quickstart acceptance and record completed tasks in specs/001-browser-rhythm-editor/tasks.md
+- [x] T027 Validate formatting, Rust tests, Vitest, Storybook, Playwright, security checks, budgets, and production build
+- [x] T028 Run quickstart acceptance and record completed tasks in specs/001-browser-rhythm-editor/tasks.md
 
 ## Dependencies & Strategy
 

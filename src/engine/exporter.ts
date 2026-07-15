@@ -1,6 +1,8 @@
 import { BufferTarget, CanvasSource, Mp4OutputFormat, Output } from 'mediabunny';
+import type { RenderPlanV1 } from '@/lib/contracts';
+import { mapOutputToSourceUs } from './playback';
 
-export interface ExportOptions { video: HTMLVideoElement; inUs: number; outUs: number; width: number; height: number; signal?: AbortSignal; onProgress?: (value: number) => void }
+export interface ExportOptions { video: HTMLVideoElement; inUs: number; outUs: number; width: number; height: number; renderPlan?: RenderPlanV1 | null; signal?: AbortSignal; onProgress?: (value: number) => void }
 
 function seek(video: HTMLVideoElement, seconds: number) {
   return new Promise<void>((resolve, reject) => {
@@ -10,7 +12,7 @@ function seek(video: HTMLVideoElement, seconds: number) {
   });
 }
 
-export async function exportMp4({ video, inUs, outUs, width, height, signal, onProgress }: ExportOptions): Promise<Blob> {
+export async function exportMp4({ video, inUs, outUs, width, height, renderPlan, signal, onProgress }: ExportOptions): Promise<Blob> {
   if (typeof VideoEncoder === 'undefined') throw new Error('這個瀏覽器不支援 WebCodecs 匯出，請使用最新版 Chrome。');
   const scale = Math.min(1, 1920 / width, 1080 / height);
   const canvas = document.createElement('canvas'); canvas.width = Math.max(2, Math.round(width * scale / 2) * 2); canvas.height = Math.max(2, Math.round(height * scale / 2) * 2);
@@ -18,11 +20,11 @@ export async function exportMp4({ video, inUs, outUs, width, height, signal, onP
   const target = new BufferTarget(); const output = new Output({ format: new Mp4OutputFormat({ fastStart: 'in-memory' }), target });
   const source = new CanvasSource(canvas, { codec: 'avc', bitrate: 6_000_000, hardwareAcceleration: 'prefer-hardware' });
   output.addVideoTrack(source, { frameRate: 30 }); await output.start();
-  const duration = (outUs - inUs) / 1e6; const frameDuration = 1 / 30; const frames = Math.ceil(duration * 30);
+  const duration = renderPlan?.segments.length ? renderPlan.durationUs / 1e6 : (outUs - inUs) / 1e6; const frameDuration = 1 / 30; const frames = Math.ceil(duration * 30);
   try {
     for (let index = 0; index < frames; index++) {
       if (signal?.aborted) throw new DOMException('已取消匯出。', 'AbortError');
-      const timestamp = index * frameDuration; await seek(video, inUs / 1e6 + timestamp);
+      const timestamp = index * frameDuration; const sourceUs = renderPlan?.segments.length ? mapOutputToSourceUs(renderPlan, timestamp * 1e6) : inUs + timestamp * 1e6; await seek(video, sourceUs / 1e6);
       context.drawImage(video, 0, 0, canvas.width, canvas.height); await source.add(timestamp, Math.min(frameDuration, duration - timestamp), { keyFrame: index % 60 === 0 });
       onProgress?.((index + 1) / frames);
     }
