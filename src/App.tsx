@@ -1,64 +1,62 @@
-import { Pause, Play, Redo2, RotateCcw, Sparkles, Undo2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Pause, Play, Redo2, RotateCcw, Sparkles, Undo2 } from 'lucide-react';
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
-import { BeatTimeline } from '@/components/editor/BeatTimeline';
 import { AudioMixer } from '@/components/editor/AudioMixer';
+import { BeatTimeline } from '@/components/editor/BeatTimeline';
 import { ExportDialog } from '@/components/editor/ExportDialog';
 import { MappingPanel } from '@/components/editor/MappingPanel';
 import { MediaDropzone } from '@/components/editor/MediaDropzone';
 import { RhythmPanel } from '@/components/editor/RhythmPanel';
+import { TimeField } from '@/components/editor/TimeField';
+import { WorkflowStepper } from '@/components/editor/WorkflowStepper';
 import { Button } from '@/components/ui/button';
 import { detectCapabilities, type CapabilityReport } from '@/engine/capabilities';
 import { inspectMedia, releaseMedia, type MediaInfo } from '@/engine/media';
+import { fitPlanToDuration } from '@/engine/output-plan';
 import { compilePlan } from '@/engine/plan';
 import { mapOutputToSourceUs } from '@/engine/playback';
 import type { RenderPlanV1 } from '@/lib/contracts';
 import { createInitialState, editorReducer } from '@/lib/editor-state';
+import { createWorkflow, workflowReducer } from '@/lib/workflow-machine';
 
 const seconds = (us: number) => (us / 1e6).toFixed(2);
+const modeLabels = { stopped: '預覽已停止', source: '正在播放完整素材', range: '正在循環預覽動作片段', rhythm: '正在預覽節奏成品' } as const;
 
 export default function App() {
-  const [state, dispatch] = useReducer(editorReducer, undefined, createInitialState);
-  const [media, setMedia] = useState<MediaInfo | null>(null);
-  const [busy, setBusy] = useState(false); const [error, setError] = useState('');
-  const [currentUs, setCurrentUs] = useState(0); const [playing, setPlaying] = useState(false);
-  const [caps, setCaps] = useState<CapabilityReport | null>(null); const [renderPlan, setRenderPlan] = useState<RenderPlanV1 | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const [editor, dispatch] = useReducer(editorReducer, undefined, createInitialState); const [workflow, send] = useReducer(workflowReducer, undefined, createWorkflow);
+  const [media, setMedia] = useState<MediaInfo | null>(null); const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [currentUs, setCurrentUs] = useState(0); const [caps, setCaps] = useState<CapabilityReport | null>(null); const [renderPlan, setRenderPlan] = useState<RenderPlanV1 | null>(null); const videoRef = useRef<HTMLVideoElement>(null);
+  const selection = editor.present.selection;
 
-  useEffect(() => { detectCapabilities().then(setCaps); }, []);
-  useEffect(() => () => releaseMedia(media), [media]);
-  const load = async (file: File) => { setBusy(true); setError(''); try { const next = await inspectMedia(file); setMedia(next); dispatch({ type: 'media/ready', durationUs: next.durationUs, frameDurationUs: next.frameDurationUs }); } catch (reason) { setError(reason instanceof Error ? reason.message : '無法讀取影片。'); } finally { setBusy(false); } };
+  useEffect(() => { detectCapabilities().then(setCaps); }, []); useEffect(() => () => releaseMedia(media), [media]);
+  const load = async (file: File) => { setBusy(true); setError(''); try { const next = await inspectMedia(file); setMedia(next); dispatch({ type: 'media/ready', durationUs: next.durationUs, frameDurationUs: next.frameDurationUs }); send({ type: 'MEDIA_READY' }); } catch (reason) { setError(reason instanceof Error ? reason.message : '無法讀取影片。'); } finally { setBusy(false); } };
   const tap = useCallback(() => dispatch({ type: 'beat/add', timeUs: currentUs }), [currentUs]);
 
-  useEffect(() => {
-    const selection = state.present.selection;
-    if (!selection || !state.present.beats.length) { setRenderPlan(null); return; }
-    let active = true;
-    compilePlan(selection.inUs, selection.outUs, state.present.beats.map(beat => beat.timeUs), state.present.mappingMode).then(plan => { if (active) setRenderPlan(plan); });
-    return () => { active = false; };
-  }, [state.present.selection, state.present.beats, state.present.mappingMode]);
+  useEffect(() => { if (!selection || !editor.present.beats.length) { setRenderPlan(null); return; } let active = true; compilePlan(selection.inUs, selection.outUs, editor.present.beats.map(beat => beat.timeUs), editor.present.mappingMode).then(plan => { if (active) setRenderPlan(fitPlanToDuration(plan, editor.present.outputDurationUs)); }); return () => { active = false; }; }, [selection, editor.present.beats, editor.present.mappingMode, editor.present.outputDurationUs]);
 
   useEffect(() => {
-    if (!playing || !renderPlan?.segments.length) return;
-    videoRef.current?.pause(); const started = performance.now(); let frame = 0;
-    const tick = (now: number) => { const sourceUs = mapOutputToSourceUs(renderPlan, (now - started) * 1000); if (videoRef.current) videoRef.current.currentTime = Math.max(0, sourceUs / 1e6); setCurrentUs(sourceUs); frame = requestAnimationFrame(tick); };
-    frame = requestAnimationFrame(tick); return () => cancelAnimationFrame(frame);
-  }, [playing, renderPlan]);
+    const video = videoRef.current; if (!video || !selection || workflow.playback !== 'range') return; video.currentTime = selection.inUs / 1e6; void video.play();
+    const loop = () => { if (video.currentTime * 1e6 >= selection.outUs) video.currentTime = selection.inUs / 1e6; }; video.addEventListener('timeupdate', loop); return () => { video.removeEventListener('timeupdate', loop); video.pause(); };
+  }, [workflow.playback, selection]);
+  useEffect(() => {
+    if (workflow.playback !== 'rhythm' || !renderPlan?.segments.length) return; videoRef.current?.pause(); const started = performance.now(); let frame = 0;
+    const tick = (now: number) => { const sourceUs = mapOutputToSourceUs(renderPlan, (now - started) * 1000); if (videoRef.current) videoRef.current.currentTime = sourceUs / 1e6; setCurrentUs(sourceUs); frame = requestAnimationFrame(tick); }; frame = requestAnimationFrame(tick); return () => cancelAnimationFrame(frame);
+  }, [workflow.playback, renderPlan]);
 
-  useEffect(() => { const key = (event: KeyboardEvent) => { if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); dispatch({ type: event.shiftKey ? 'history/redo' : 'history/undo' }); return; } if (event.target instanceof HTMLInputElement) return; if (event.code === 'Space') { event.preventDefault(); tap(); } if (event.key.toLowerCase() === 'i') dispatch({ type: 'selection/set', inUs: currentUs, outUs: state.present.selection?.outUs ?? state.present.durationUs }); if (event.key.toLowerCase() === 'o') dispatch({ type: 'selection/set', inUs: state.present.selection?.inUs ?? 0, outUs: currentUs }); }; window.addEventListener('keydown', key); return () => window.removeEventListener('keydown', key); }, [currentUs, state.present, tap]);
+  const stop = () => { videoRef.current?.pause(); send({ type: 'STOP' }); };
+  const togglePreview = () => { if (workflow.playback !== 'stopped') { stop(); return; } if (workflow.step === 'select') send({ type: 'PLAY_RANGE' }); else if (renderPlan) send({ type: 'PLAY_RHYTHM' }); else { send({ type: 'PLAY_SOURCE' }); void videoRef.current?.play(); } };
+  const seek = (timeUs: number) => { stop(); setCurrentUs(timeUs); if (videoRef.current) videoRef.current.currentTime = timeUs / 1e6; };
+  useEffect(() => { const key = (event: KeyboardEvent) => { if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); dispatch({ type: event.shiftKey ? 'history/redo' : 'history/undo' }); return; } if (event.target instanceof HTMLInputElement) return; if (event.code === 'Space' && workflow.step === 'rhythm') { event.preventDefault(); tap(); } if (event.key.toLowerCase() === 'i' && selection) dispatch({ type: 'selection/set', inUs: currentUs, outUs: selection.outUs }); if (event.key.toLowerCase() === 'o' && selection) dispatch({ type: 'selection/set', inUs: selection.inUs, outUs: currentUs }); }; window.addEventListener('keydown', key); return () => window.removeEventListener('keydown', key); }, [currentUs, selection, tap, workflow.step]);
 
-  if (!media) return <main className="min-h-screen"><header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5"><span className="flex items-center gap-2 font-semibold"><Sparkles className="text-amber-300" size={18} />Clip Pulse</span><span className="text-xs text-zinc-500">Chrome 優先 · 本機處理</span></header><MediaDropzone busy={busy} onFile={load} />{error && <p role="alert" className="mx-auto max-w-3xl px-6 text-center text-red-300">{error}</p>}</main>;
+  if (!media || !selection) return <main className="min-h-screen"><header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5"><span className="flex items-center gap-2 font-semibold"><Sparkles className="text-amber-300" size={18} />Clip Pulse</span><span className="text-xs text-zinc-500">Chrome 優先 · 本機處理</span></header><MediaDropzone busy={busy} onFile={load} />{error && <p role="alert" className="mx-auto max-w-3xl px-6 text-center text-red-300">{error}</p>}</main>;
 
-  const selection = state.present.selection!;
-  const seek = (timeUs: number) => { setPlaying(false); setCurrentUs(timeUs); if (videoRef.current) videoRef.current.currentTime = timeUs / 1e6; };
-  const toggle = () => { if (playing) { setPlaying(false); videoRef.current?.pause(); } else if (renderPlan) setPlaying(true); else videoRef.current?.play(); };
-  return <main className="min-h-screen bg-zinc-950">
-    <header className="flex h-14 items-center justify-between border-b border-zinc-800 px-4"><span className="flex items-center gap-2 font-semibold"><Sparkles className="text-amber-300" size={17} />Clip Pulse</span><div className="flex gap-1"><Button variant="ghost" size="icon" aria-label="復原" disabled={!state.past.length} onClick={() => dispatch({ type: 'history/undo' })}><Undo2 size={16} /></Button><Button variant="ghost" size="icon" aria-label="重做" disabled={!state.future.length} onClick={() => dispatch({ type: 'history/redo' })}><Redo2 size={16} /></Button><Button variant="ghost" onClick={() => setMedia(null)}><RotateCcw size={15} />換影片</Button></div></header>
-    <div className="grid min-h-[calc(100vh-3.5rem)] lg:grid-cols-[1fr_19rem]"><section className="flex min-w-0 flex-col"><div className="relative grid flex-1 place-items-center bg-black p-4"><video ref={videoRef} src={media.url} muted={!state.present.referenceAudioEnabled} className="max-h-[58vh] max-w-full rounded-lg shadow-2xl" playsInline onTimeUpdate={event => { if (!renderPlan) setCurrentUs(Math.round(event.currentTarget.currentTime * 1e6)); }} onPlay={() => setPlaying(true)} onPause={() => { if (!renderPlan) setPlaying(false); }} />{playing && renderPlan && <span className="absolute left-6 top-6 rounded-full bg-amber-400 px-3 py-1 text-xs font-semibold text-zinc-950">節奏預覽中</span>}</div>
-      <div className="flex items-center gap-3 border-t border-zinc-800 px-4 py-3"><Button size="icon" aria-label={playing ? '暫停' : '播放'} onClick={toggle}>{playing ? <Pause size={17} /> : <Play size={17} />}</Button><span className="w-28 font-mono text-xs">{seconds(currentUs)} / {seconds(media.durationUs)} 秒</span><input aria-label="播放位置" className="min-w-0 flex-1 accent-amber-400" type="range" min="0" max={media.durationUs} value={currentUs} onChange={event => seek(Number(event.target.value))} /><Button variant="secondary" onClick={tap}>Tap 拍點 <kbd>Space</kbd></Button></div>
-      <BeatTimeline durationUs={media.durationUs} currentUs={currentUs} beats={state.present.beats} onSeek={seek} onMove={(id, timeUs) => dispatch({ type: 'beat/move', id, timeUs })} onRemove={id => dispatch({ type: 'beat/remove', id })} /></section>
-      <aside className="space-y-6 overflow-y-auto border-l border-zinc-800 bg-zinc-950 p-4"><section><h2 className="text-sm font-semibold">動作片段</h2><div className="mt-2 grid grid-cols-2 gap-2"><label className="text-xs text-zinc-400">起點（秒）<input className="mt-1 w-full rounded-md bg-zinc-900 p-2" type="number" step="0.01" value={seconds(selection.inUs)} onChange={event => dispatch({ type: 'selection/set', inUs: Number(event.target.value) * 1e6, outUs: selection.outUs })} /></label><label className="text-xs text-zinc-400">終點（秒）<input className="mt-1 w-full rounded-md bg-zinc-900 p-2" type="number" step="0.01" value={seconds(selection.outUs)} onChange={event => dispatch({ type: 'selection/set', inUs: selection.inUs, outUs: Number(event.target.value) * 1e6 })} /></label></div></section>
-        <RhythmPanel durationUs={media.durationUs} beats={state.present.beats} onReplace={beats => dispatch({ type: 'beats/replace', beats })} /><MappingPanel value={state.present.mappingMode} onChange={mode => dispatch({ type: 'mapping/set', mode })} /><AudioMixer enabled={state.present.referenceAudioEnabled} onChange={enabled => dispatch({ type: 'reference-audio/set', enabled })} />
-        <section className="rounded-lg border border-zinc-800 p-3 text-xs text-zinc-400"><p>{media.width} × {media.height} · {media.name}</p><p className="mt-1">WebGPU：{caps?.webGpu ? '可用' : '未啟用'} · WebCodecs：{caps?.videoEncode ? '可用' : '不可用'}</p><p className="mt-1">WASM 節奏規劃：{renderPlan?.segments.length ?? 0} 個片段</p></section><ExportDialog videoRef={videoRef} selection={selection} size={media} renderPlan={renderPlan} />
-      </aside></div>
+  const rangeDuration = selection.outUs - selection.inUs;
+  return <main className="min-h-screen bg-zinc-950"><header className="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-zinc-800 px-4 py-3"><span className="flex items-center gap-2 font-semibold"><Sparkles className="text-amber-300" size={17} />Clip Pulse</span><WorkflowStepper current={workflow.step} /><div className="flex gap-1"><Button variant="ghost" size="icon" aria-label="復原" disabled={!editor.past.length} onClick={() => dispatch({ type: 'history/undo' })}><Undo2 size={16} /></Button><Button variant="ghost" size="icon" aria-label="重做" disabled={!editor.future.length} onClick={() => dispatch({ type: 'history/redo' })}><Redo2 size={16} /></Button><Button variant="ghost" onClick={() => { stop(); setMedia(null); send({ type: 'RESET' }); }}><RotateCcw size={15} />換影片</Button></div></header>
+    <div className="grid min-h-[calc(100vh-4rem)] lg:grid-cols-[1fr_21rem]"><section className="flex min-w-0 flex-col"><div className="relative grid flex-1 place-items-center bg-black p-4"><video ref={videoRef} src={media.url} muted={!editor.present.referenceAudioEnabled} className="max-h-[56vh] max-w-full rounded-lg shadow-2xl" playsInline onTimeUpdate={event => { if (workflow.playback !== 'rhythm') setCurrentUs(Math.round(event.currentTarget.currentTime * 1e6)); }} onEnded={() => send({ type: 'STOP' })} /><div className="absolute left-6 top-6 rounded-lg bg-black/75 px-3 py-2"><p className="text-xs font-semibold text-zinc-100">影片預覽</p><p role="status" className="text-[11px] text-amber-300">{modeLabels[workflow.playback]}</p></div></div>
+      <div className="flex items-center gap-3 border-t border-zinc-800 px-4 py-3"><Button size="icon" aria-label={workflow.playback === 'stopped' ? (workflow.step === 'select' ? '預覽選取範圍' : '播放預覽') : '暫停預覽'} onClick={togglePreview}>{workflow.playback === 'stopped' ? <Play size={17} /> : <Pause size={17} />}</Button><span className="w-28 font-mono text-xs">{seconds(currentUs)} / {seconds(media.durationUs)} 秒</span><input aria-label="播放位置" className="min-w-0 flex-1 accent-amber-400" type="range" min="0" max={media.durationUs} value={currentUs} onChange={event => seek(Number(event.target.value))} />{workflow.step === 'rhythm' && <Button variant="secondary" onClick={tap}>加入拍點 <kbd>Space</kbd></Button>}</div>
+      <BeatTimeline durationUs={media.durationUs} currentUs={currentUs} beats={editor.present.beats} selection={selection} onSeek={seek} onMove={(id, timeUs) => dispatch({ type: 'beat/move', id, timeUs })} onRemove={id => dispatch({ type: 'beat/remove', id })} onClear={() => dispatch({ type: 'beats/replace', beats: [] })} /></section>
+      <aside className="flex flex-col border-l border-zinc-800 bg-zinc-950"><div className="flex-1 space-y-6 overflow-y-auto p-5">
+        {workflow.step === 'select' && <><section><h1 className="text-lg font-semibold">選取要重複的動作</h1><p className="mt-1 text-sm text-zinc-400">拖動播放位置，將目前畫面設為起點或終點，再循環預覽確認。</p></section><div className="grid grid-cols-2 gap-3"><TimeField label="起點時間" valueUs={selection.inUs} maxUs={media.durationUs} onCommit={inUs => dispatch({ type: 'selection/set', inUs, outUs: selection.outUs })} /><TimeField label="終點時間" valueUs={selection.outUs} maxUs={media.durationUs} onCommit={outUs => dispatch({ type: 'selection/set', inUs: selection.inUs, outUs })} /></div><div className="grid grid-cols-2 gap-2"><Button variant="secondary" onClick={() => dispatch({ type: 'selection/set', inUs: currentUs, outUs: selection.outUs })}>目前位置設為起點</Button><Button variant="secondary" onClick={() => dispatch({ type: 'selection/set', inUs: selection.inUs, outUs: currentUs })}>目前位置設為終點</Button></div><div className="rounded-lg border border-amber-400/30 bg-amber-400/5 p-3 text-sm"><p>選取長度：<strong>{seconds(rangeDuration)} 秒</strong></p><Button className="mt-3 w-full" onClick={togglePreview}>{workflow.playback === 'range' ? <><Pause size={16} />停止範圍預覽</> : <><Play size={16} />循環預覽這個範圍</>}</Button></div></>}
+        {workflow.step === 'rhythm' && <><section><h1 className="text-lg font-semibold">設定節奏與拍點</h1><p className="mt-1 text-sm text-zinc-400">播放時按 Space 加入拍點，也可用 BPM、範本或參考音訊。</p></section><RhythmPanel durationUs={media.durationUs} beats={editor.present.beats} onReplace={beats => dispatch({ type: 'beats/replace', beats })} /></>}
+        {workflow.step === 'preview' && <><section><h1 className="text-lg font-semibold">預覽與匯出</h1><p className="mt-1 text-sm text-zinc-400">設定輸出總長度，確認節奏循環後再匯出。</p></section><TimeField label="輸出總長度" valueUs={editor.present.outputDurationUs} maxUs={600_000_000} onCommit={durationUs => dispatch({ type: 'output-duration/set', durationUs })} /><MappingPanel value={editor.present.mappingMode} onChange={mode => dispatch({ type: 'mapping/set', mode })} /><AudioMixer enabled={editor.present.referenceAudioEnabled} onChange={enabled => dispatch({ type: 'reference-audio/set', enabled })} /><section className="rounded-lg border border-zinc-800 p-3 text-xs text-zinc-400"><p>{media.width} × {media.height} · {media.name}</p><p className="mt-1">WebGPU：{caps?.webGpu ? '可用' : '未啟用'} · WebCodecs：{caps?.videoEncode ? '可用' : '不可用'}</p><p className="mt-1">成品長度：{seconds(editor.present.outputDurationUs)} 秒 · {renderPlan?.segments.length ?? 0} 個片段</p></section><ExportDialog videoRef={videoRef} selection={selection} size={media} renderPlan={renderPlan} /></>}
+      </div><nav aria-label="製作步驟" className="flex justify-between border-t border-zinc-800 p-4">{workflow.step !== 'select' ? <Button variant="ghost" onClick={() => send({ type: 'BACK' })}><ArrowLeft size={16} />上一步</Button> : <span />}{workflow.step !== 'preview' && <Button onClick={() => send({ type: 'NEXT' })}>下一步<ArrowRight size={16} /></Button>}</nav></aside></div>
   </main>;
 }

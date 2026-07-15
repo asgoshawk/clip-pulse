@@ -7,6 +7,7 @@ export interface EditorDocument {
   beats: BeatEvent[];
   mappingMode: MappingMode;
   referenceAudioEnabled: boolean;
+  outputDurationUs: number;
 }
 
 export interface EditorState {
@@ -24,6 +25,7 @@ export type EditorAction =
   | { type: 'beats/replace'; beats: BeatEvent[] }
   | { type: 'mapping/set'; mode: MappingMode }
   | { type: 'reference-audio/set'; enabled: boolean }
+  | { type: 'output-duration/set'; durationUs: number }
   | { type: 'history/undo' }
   | { type: 'history/redo' };
 
@@ -34,6 +36,7 @@ const empty: EditorDocument = {
   beats: [],
   mappingMode: 'restart',
   referenceAudioEnabled: false,
+  outputDurationUs: 5_000_000,
 };
 
 export function createInitialState(): EditorState {
@@ -78,6 +81,7 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       next.frameDurationUs = Math.max(1, Math.round(action.frameDurationUs));
       next.selection = next.durationUs ? { inUs: 0, outUs: Math.min(next.durationUs, 1_000_000) } : null;
       next.beats = [];
+      next.outputDurationUs = Math.min(next.durationUs, 5_000_000);
       break;
     case 'selection/set':
       next.selection = clampSelection(next, action.inUs, action.outUs);
@@ -99,6 +103,9 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       break;
     case 'reference-audio/set':
       next.referenceAudioEnabled = action.enabled;
+      break;
+    case 'output-duration/set':
+      next.outputDurationUs = Math.min(600_000_000, Math.max(next.frameDurationUs, Math.round(action.durationUs)));
       break;
   }
   return commit(state, next);

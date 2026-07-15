@@ -8,6 +8,13 @@
 - Rationale: RxJS pipeable operators compose without mutating the input Observable and subscriptions define teardown; Zustand selector subscriptions can prevent unrelated editor panels from re-rendering. Both support the performance constraints when kept outside the deterministic domain core.
 - Rejected: migrating all React state and events immediately. It increases bundle and conceptual cost before the workflows requiring those abstractions exist.
 
+## Guided workflow and transport state (2026-07-15)
+
+- Decision: model production as `import -> select -> rhythm -> preview` and playback as the mutually exclusive `stopped | source | range | rhythm` state machine.
+- Decision: action range, source playhead, beat positions, and output duration remain separate domain values. Output duration trims or repeats the immutable render plan and never mutates the selected source range.
+- Decision: accept both seconds and `minutes:seconds` as draft text, validating only on Enter or blur. Range preview loops between In and Out before the user advances.
+- Rationale: this prevents native video events, range looping, and requestAnimationFrame rhythm preview from independently toggling the same boolean, while keeping transitions deterministic and testable.
+
 ## Browser media stack
 
 **Decision**: Use Mediabunny for container inspection/muxing and WebCodecs for supported

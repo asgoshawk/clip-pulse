@@ -1,0 +1,3 @@
+import type { WorkflowStep } from '@/lib/workflow-machine';
+const steps: { value: Exclude<WorkflowStep, 'import'>; label: string }[] = [{ value: 'select', label: '1 選取動作' }, { value: 'rhythm', label: '2 設定節奏' }, { value: 'preview', label: '3 預覽匯出' }];
+export function WorkflowStepper({ current }: { current: WorkflowStep }) { const index = steps.findIndex(step => step.value === current); return <ol aria-label="製作進度" className="flex gap-2">{steps.map((step, stepIndex) => <li key={step.value} aria-current={step.value === current ? 'step' : undefined} className={`rounded-full px-3 py-1 text-xs ${stepIndex === index ? 'bg-amber-400 font-semibold text-zinc-950' : stepIndex < index ? 'bg-zinc-700 text-zinc-200' : 'bg-zinc-900 text-zinc-500'}`}>{step.label}</li>)}</ol>; }
