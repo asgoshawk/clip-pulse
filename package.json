@@ -1,0 +1,72 @@
+{
+  "name": "clip-pulse",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "corepack pnpm wasm:build && tsc -b && vite build && corepack pnpm budget",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:visual": "playwright test tests/visual",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "wasm:build": "wasm-pack build crates/clip-pulse-core --target web --out-dir ../../src/wasm --release",
+    "check:language": "node tests/language-policy.test.mjs",
+    "check:docs": "node scripts/check-docs.mjs",
+    "budget": "node scripts/check-bundle-budget.mjs",
+    "check": "corepack pnpm check:language && corepack pnpm check:docs && corepack pnpm test && cargo test --workspace",
+    "verify:local": "corepack pnpm check:language && corepack pnpm check:docs && corepack pnpm test && corepack pnpm build-storybook && cargo fmt --check && cargo test --workspace && cargo clippy --workspace --all-targets -- -D warnings && corepack pnpm build && corepack pnpm test:e2e"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  },
+  "dependencies": {
+    "@radix-ui/react-accordion": "1.2.16",
+    "@radix-ui/react-dialog": "1.1.19",
+    "@radix-ui/react-select": "2.3.3",
+    "@radix-ui/react-slider": "1.4.3",
+    "@radix-ui/react-slot": "1.3.0",
+    "@radix-ui/react-tabs": "1.1.17",
+    "@radix-ui/react-tooltip": "1.2.12",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "lucide-react": "1.24.0",
+    "mediabunny": "1.50.8",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "tailwind-merge": "3.6.0",
+    "valibot": "1.4.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1",
+    "@storybook/addon-a11y": "10.5.0",
+    "@storybook/addon-vitest": "10.5.0",
+    "@storybook/react-vite": "10.5.0",
+    "@tailwindcss/vite": "4.3.2",
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/react": "16.3.2",
+    "@testing-library/user-event": "14.6.1",
+    "@types/node": "26.1.1",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.3",
+    "@vitest/coverage-v8": "4.1.10",
+    "eslint": "10.7.0",
+    "jsdom": "29.1.1",
+    "prettier": "3.9.5",
+    "storybook": "10.5.0",
+    "tailwindcss": "4.3.2",
+    "typescript": "7.0.2",
+    "vite": "8.1.4",
+    "vitest": "4.1.10"
+  }
+}

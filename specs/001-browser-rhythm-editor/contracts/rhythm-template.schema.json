@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://asgoshawk.github.io/clip-pulse/contracts/rhythm-template-v1.schema.json",
+  "title": "RhythmTemplateV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "name", "durationUs", "beats"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "durationUs": { "type": "integer", "minimum": 1, "maximum": 600000000 },
+    "beats": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "timeUs", "accent"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "timeUs": { "type": "integer", "minimum": 0, "maximum": 600000000 },
+          "accent": { "type": "integer", "minimum": 1, "maximum": 3 }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+node_modules/
+dist/
+storybook-static/
+coverage/
+playwright-report/
+test-results/
+target/
+src/wasm/
+*.log
+*.tsbuildinfo
+.env*
+.DS_Store
+.idea/
+.vscode/
+*.swp

@@ -1,0 +1,2 @@
+import { readFile } from 'node:fs/promises'; import { execFileSync } from 'node:child_process';
+const files=execFileSync('rg',['--files','src','docs'],{encoding:'utf8'}).trim().split('\n'); const banned=['视频','文件夹','软件','默认','保存到','点击']; for(const file of files){const text=await readFile(file,'utf8');for(const word of banned)if(text.includes(word))throw new Error(`${file} 包含禁用詞：${word}`)} console.log('Taiwan language policy: pass');

@@ -1,0 +1,21 @@
+[package]
+name = "clip-pulse-core"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+js-sys = "=0.3.81"
+serde = { version = "=1.0.228", features = ["derive"] }
+serde-wasm-bindgen = "=0.6.5"
+thiserror = "=2.0.17"
+wasm-bindgen = "=0.2.104"
+
+[dev-dependencies]
+proptest = "=1.9.0"
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false

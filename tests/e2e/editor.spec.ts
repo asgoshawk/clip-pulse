@@ -1,0 +1,3 @@
+import { expect, test } from '@playwright/test';
+test('shows the private local-first entry experience', async ({ page }) => { const requests:string[]=[]; page.on('request',r=>{if(!r.url().startsWith('http://127.0.0.1'))requests.push(r.url())}); await page.goto('./'); await expect(page.getByRole('heading',{name:'讓動作跟著節奏跳動'})).toBeVisible(); await expect(page.getByText('檔案只在這台裝置處理，不會上傳。')).toBeVisible(); expect(requests).toEqual([]); });
+test('rejects an unsupported file defensively', async ({ page }) => { await page.goto('./'); await page.getByLabel('選擇影片檔案').setInputFiles({name:'notes.txt',mimeType:'text/plain',buffer:Buffer.from('no')}); await expect(page.getByRole('alert')).toContainText('MP4 或 MOV'); });
