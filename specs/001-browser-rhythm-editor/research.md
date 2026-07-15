@@ -39,6 +39,12 @@ without the multi-threaded WASM headers unavailable on GitHub Pages.
 cross-origin isolation, and duplicate codec work. MediaRecorder was rejected because it
 does not provide deterministic source timestamps or exact edit boundaries.
 
+## Bounded source-audio export (2026-07-16)
+
+**Decision**: Decode only the selected source range through Mediabunny's `BlobSource` and `AudioSampleSink`, cap retained planar PCM at 64 MiB, render output audio in one-second chunks, encode AAC with WebCodecs, and mux it beside H.264 in the same MP4. Restart repeats source samples, held frames emit silence, fit mode resamples by the render-plan rate, and reverse segments reverse sample traversal.
+
+**Rationale**: A whole-file `arrayBuffer()` or whole-output `OfflineAudioContext` would scale with source or output duration and violate the memory budget. The selected-range cache makes repeated beat access deterministic while one-second output chunks bound transient allocation and encoder backpressure.
+
 ## WASM boundary
 
 **Decision**: Rust owns validation-independent render-plan compilation and mono onset

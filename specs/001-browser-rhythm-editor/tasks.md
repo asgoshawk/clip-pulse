@@ -53,6 +53,8 @@
 - [x] T030 [US1] Add dismissible composition onboarding in src/components/editor/ComposeOnboarding.tsx
 - [x] T031 [US1] Add unit, browser interaction, and visual regression coverage for audible preview, moving output playhead, and onboarding
 - [x] T032 [US1] Add and validate an original downloadable cinematic fanfare timing example with duration-aware template import
+- [x] T033 [US1] Add bounded selected-range PCM decoding, pure audio timeline rendering, AAC encoding, and H.264/AAC MP4 muxing
+- [x] T034 [US1] Verify exported MP4 contains decodable, non-silent audio and video tracks in Chrome Playwright
 
 ## Dependencies & Strategy
 

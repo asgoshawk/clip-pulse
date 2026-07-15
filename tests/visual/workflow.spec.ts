@@ -19,7 +19,7 @@ test('guided workflow stages', async ({ page }) => {
     mask: [
       page.locator('video, input[type="text"], input[type="range"]'),
       page.locator('span.font-mono'),
-      page.getByText(/來源片段長度：|成品：/),
+      page.getByText(/來源片段長度：|來源片段：|成品：/),
     ],
     maskColor: '#18181b',
   };

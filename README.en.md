@@ -8,4 +8,4 @@ A privacy-first rhythm video editor that runs locally in the browser. Import MP4
 
 Requires Node.js 20.19+, pnpm 9.15.4, Rust 1.96, and wasm-pack. Run `corepack pnpm install --frozen-lockfile`, `corepack pnpm test`, `cargo test --workspace`, then `corepack pnpm dev`. The canonical engineering specification is under `specs/001-browser-rhythm-editor/`.
 
-The MVP targets current desktop Chrome. It uses a functional core with an imperative shell, RxJS for cancellable audio analysis, and Zustand for lightweight session state. AAC mixing remains a planned increment; current MP4 exports contain a silent video track.
+The MVP targets current desktop Chrome. It uses a functional core with an imperative shell, RxJS for cancellable audio analysis, and Zustand for lightweight session state. H.264/AAC MP4 export now rhythm-maps source audio when present; reference-audio and metronome mixing remain planned increments.

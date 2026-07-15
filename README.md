@@ -19,4 +19,4 @@ corepack pnpm dev
 
 提交前請執行 `corepack pnpm verify:local`；較耗時的 Storybook、Playwright 與 Clippy 刻意留在本機，GitHub Actions 僅保留必要測試與 Pages 建置，以節省免費帳號用量。相依套件使用精確版本、鎖定檔、停用安裝腳本及 Dependabot 監控；提交訊息遵循英文 Conventional Commits。
 
-目前 MVP 以最新版桌面版 Chrome 為主要支援環境。架構採 functional core／imperative shell；RxJS 管理可取消音訊分析，Zustand 只保存輕量 session 狀態。AAC 混音仍列為後續增量，目前匯出的 MP4 為無音訊影片軌。
+目前 MVP 以最新版桌面版 Chrome 為主要支援環境。架構採 functional core／imperative shell；RxJS 管理可取消音訊分析，Zustand 只保存輕量 session 狀態。來源有音訊時，匯出的 H.264／AAC MP4 會依成品片段時間軸重排來源音訊；參考音訊與節拍器混音仍列為後續增量。

@@ -1,4 +1,5 @@
 export interface MediaInfo {
+  file: File;
   name: string;
   url: string;
   durationUs: number;
@@ -30,7 +31,7 @@ export async function inspectMedia(file: File): Promise<MediaInfo> {
     if (!Number.isFinite(video.duration) || video.duration <= 0 || video.duration > MAX_DURATION_SECONDS) {
       throw new RangeError('MVP 支援最長 10 分鐘的影片。');
     }
-    return { name: file.name, url, durationUs: Math.round(video.duration * 1e6), width: video.videoWidth, height: video.videoHeight, frameDurationUs: 33_333 };
+    return { file, name: file.name, url, durationUs: Math.round(video.duration * 1e6), width: video.videoWidth, height: video.videoHeight, frameDurationUs: 33_333 };
   } catch (error) {
     URL.revokeObjectURL(url);
     throw error;

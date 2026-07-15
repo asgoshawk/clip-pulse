@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { ALL_FORMATS, FilePathSource, Input } from 'mediabunny';
 import { createPulseWav, createVideoFixture } from '../fixtures/media';
 test('shows the private local-first entry experience', async ({ page }) => { const requests:string[]=[]; page.on('request',r=>{if(!r.url().startsWith('http://127.0.0.1'))requests.push(r.url())}); await page.goto('./'); await expect(page.getByRole('heading',{name:'讓動作跟著節奏跳動'})).toBeVisible(); await expect(page.getByText('檔案只在這台裝置處理，不會上傳。')).toBeVisible(); expect(requests).toEqual([]); });
 test('opens the native file chooser from the visible button', async ({ page }) => {
@@ -33,6 +34,8 @@ test('creates, removes, and previews beats with an explicit output duration', as
   const downloadPromise = page.waitForEvent('download'); await page.getByRole('button', { name: '匯出 MP4' }).click(); const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe('clip-pulse.mp4'); const path = await download.path(); expect(path).toBeTruthy();
   const bytes = await import('node:fs/promises').then(fs => fs.readFile(path!)); expect(bytes.length).toBeGreaterThan(1_000); expect(bytes.subarray(4, 8).toString()).toBe('ftyp');
+  const exported = new Input({ formats: ALL_FORMATS, source: new FilePathSource(path!) }); try { expect(await exported.getAudioTracks()).toHaveLength(1); expect(await exported.getVideoTracks()).toHaveLength(1); } finally { exported.dispose(); }
+  const peak = await page.evaluate(async values => { const context = new AudioContext(); try { const decoded = await context.decodeAudioData(new Uint8Array(values).buffer); return decoded.getChannelData(0).reduce((largest, value) => Math.max(largest, Math.abs(value)), 0); } finally { await context.close(); } }, Array.from(bytes)); expect(peak).toBeGreaterThan(0.01);
 });
 test('analyzes uploaded reference audio locally and creates editable beats', async ({ page }) => {
   await page.goto('./'); const video = await createVideoFixture(page); await page.getByLabel('影片檔案').setInputFiles({ name: 'fixture.mp4', mimeType: 'video/mp4', buffer: video });
