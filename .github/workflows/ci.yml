@@ -9,7 +9,7 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: actions/setup-node@1e60f620b9541d0b03b1845f8b72c3b6a1e1d8c0 # v4.0.3
         with: { node-version: '22.14.0', cache: pnpm }
       - run: corepack enable && corepack prepare pnpm@9.15.4 --activate
